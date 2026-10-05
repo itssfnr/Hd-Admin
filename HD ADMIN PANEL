@@ -1,0 +1,409 @@
+--// Local Admin Panel
+--// Nur LocalScript
+--// Für dein eigenes Roblox-Spiel
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+--// GUI
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "LocalAdminPanel"
+Gui.ResetOnSpawn = false
+Gui.Parent = PlayerGui
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 650, 0, 430)
+Main.Position = UDim2.new(0.5, -325, 0.5, -215)
+Main.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+Main.BorderSizePixel = 0
+Main.Parent = Gui
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 12)
+Corner.Parent = Main
+
+--// Titel
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -20, 0, 45)
+Title.Position = UDim2.new(0, 10, 0, 5)
+Title.BackgroundTransparency = 1
+Title.Text = "LOCAL ADMIN PANEL"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 22
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Main
+
+--// Spieler-Liste
+local PlayerList = Instance.new("ScrollingFrame")
+PlayerList.Size = UDim2.new(0, 190, 0, 300)
+PlayerList.Position = UDim2.new(0, 15, 0, 60)
+PlayerList.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+PlayerList.BorderSizePixel = 0
+PlayerList.ScrollBarThickness = 5
+PlayerList.Parent = Main
+
+local ListLayout = Instance.new("UIListLayout")
+ListLayout.Padding = UDim.new(0, 5)
+ListLayout.Parent = PlayerList
+
+local SelectedPlayer = LocalPlayer
+
+local function CreatePlayerButton(player)
+	local Button = Instance.new("TextButton")
+	Button.Size = UDim2.new(1, -10, 0, 35)
+	Button.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+	Button.BorderSizePixel = 0
+	Button.Text = player.DisplayName .. "  @" .. player.Name
+	Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Button.Font = Enum.Font.Gotham
+	Button.TextSize = 13
+	Button.Parent = PlayerList
+
+	local C = Instance.new("UICorner")
+	C.CornerRadius = UDim.new(0, 6)
+	C.Parent = Button
+
+	Button.MouseButton1Click:Connect(function()
+		SelectedPlayer = player
+
+		for _, child in ipairs(PlayerList:GetChildren()) do
+			if child:IsA("TextButton") then
+				child.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+			end
+		end
+
+		Button.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+	end)
+end
+
+local function RefreshPlayers()
+	for _, child in ipairs(PlayerList:GetChildren()) do
+		if child:IsA("TextButton") then
+			child:Destroy()
+		end
+	end
+
+	for _, player in ipairs(Players:GetPlayers()) do
+		CreatePlayerButton(player)
+	end
+
+	PlayerList.CanvasSize = UDim2.new(0, 0, 0, #Players:GetPlayers() * 40)
+end
+
+RefreshPlayers()
+
+Players.PlayerAdded:Connect(RefreshPlayers)
+Players.PlayerRemoving:Connect(function(player)
+	if SelectedPlayer == player then
+		SelectedPlayer = LocalPlayer
+	end
+	RefreshPlayers()
+end)
+
+--// Command-Bar
+local CommandBox = Instance.new("TextBox")
+CommandBox.Size = UDim2.new(0, 410, 0, 55)
+CommandBox.Position = UDim2.new(0, 220, 0, 65)
+CommandBox.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+CommandBox.BorderSizePixel = 0
+CommandBox.PlaceholderText = "Command eingeben..."
+CommandBox.PlaceholderColor3 = Color3.fromRGB(130, 130, 140)
+CommandBox.Text = ""
+CommandBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+CommandBox.Font = Enum.Font.Code
+CommandBox.TextSize = 17
+CommandBox.ClearTextOnFocus = false
+CommandBox.Parent = Main
+
+local BoxCorner = Instance.new("UICorner")
+BoxCorner.CornerRadius = UDim.new(0, 8)
+BoxCorner.Parent = CommandBox
+
+--// Execute
+local Execute = Instance.new("TextButton")
+Execute.Size = UDim2.new(0, 195, 0, 45)
+Execute.Position = UDim2.new(0, 220, 0, 135)
+Execute.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
+Execute.BorderSizePixel = 0
+Execute.Text = "▶  EXECUTE"
+Execute.TextColor3 = Color3.fromRGB(255, 255, 255)
+Execute.Font = Enum.Font.GothamBold
+Execute.TextSize = 15
+Execute.Parent = Main
+
+local ExecuteCorner = Instance.new("UICorner")
+ExecuteCorner.CornerRadius = UDim.new(0, 8)
+ExecuteCorner.Parent = Execute
+
+--// Stop
+local Stop = Instance.new("TextButton")
+Stop.Size = UDim2.new(0, 195, 0, 45)
+Stop.Position = UDim2.new(0, 435, 0, 135)
+Stop.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
+Stop.BorderSizePixel = 0
+Stop.Text = "■  STOP"
+Stop.TextColor3 = Color3.fromRGB(255, 255, 255)
+Stop.Font = Enum.Font.GothamBold
+Stop.TextSize = 15
+Stop.Parent = Main
+
+local StopCorner = Instance.new("UICorner")
+StopCorner.CornerRadius = UDim.new(0, 8)
+StopCorner.Parent = Stop
+
+--// Status
+local Status = Instance.new("TextLabel")
+Status.Size = UDim2.new(0, 410, 0, 35)
+Status.Position = UDim2.new(0, 220, 0, 195)
+Status.BackgroundTransparency = 1
+Status.Text = "Bereit"
+Status.TextColor3 = Color3.fromRGB(100, 255, 150)
+Status.Font = Enum.Font.Gotham
+Status.TextSize = 14
+Status.TextXAlignment = Enum.TextXAlignment.Left
+Status.Parent = Main
+
+--// Command-History
+local History = Instance.new("ScrollingFrame")
+History.Size = UDim2.new(0, 410, 0, 160)
+History.Position = UDim2.new(0, 220, 0, 235)
+History.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+History.BorderSizePixel = 0
+History.ScrollBarThickness = 5
+History.Parent = Main
+
+local HistoryLayout = Instance.new("UIListLayout")
+HistoryLayout.Padding = UDim.new(0, 3)
+HistoryLayout.Parent = History
+
+local Running = false
+
+local function AddHistory(text)
+	local Label = Instance.new("TextLabel")
+	Label.Size = UDim2.new(1, -10, 0, 25)
+	Label.BackgroundTransparency = 1
+	Label.Text = text
+	Label.TextColor3 = Color3.fromRGB(210, 210, 210)
+	Label.Font = Enum.Font.Code
+	Label.TextSize = 13
+	Label.TextXAlignment = Enum.TextXAlignment.Left
+	Label.Parent = History
+
+	History.CanvasPosition = Vector2.new(
+		0,
+		math.max(0, HistoryLayout.AbsoluteContentSize.Y)
+	)
+end
+
+--// Lokale Commands
+local Commands = {}
+
+Commands.speed = function(value)
+	local character = LocalPlayer.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+	if humanoid then
+		humanoid.WalkSpeed = tonumber(value) or 16
+	end
+end
+
+Commands.jump = function(value)
+	local character = LocalPlayer.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+	if humanoid then
+		humanoid.JumpPower = tonumber(value) or 50
+	end
+end
+
+Commands.reset = function()
+	local character = LocalPlayer.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+	if humanoid then
+		humanoid.Health = 0
+	end
+end
+
+Commands.sit = function()
+	local character = LocalPlayer.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+	if humanoid then
+		humanoid.Sit = true
+	end
+end
+
+Commands.unsit = function()
+	local character = LocalPlayer.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+	if humanoid then
+		humanoid.Sit = false
+	end
+end
+
+Commands.invisible = function()
+	local character = LocalPlayer.Character
+
+	if character then
+		for _, obj in ipairs(character:GetDescendants()) do
+			if obj:IsA("BasePart") then
+				obj.LocalTransparencyModifier = 1
+			elseif obj:IsA("Decal") then
+				obj.Transparency = 1
+			end
+		end
+	end
+end
+
+Commands.visible = function()
+	local character = LocalPlayer.Character
+
+	if character then
+		for _, obj in ipairs(character:GetDescendants()) do
+			if obj:IsA("BasePart") then
+				obj.LocalTransparencyModifier = 0
+			elseif obj:IsA("Decal") then
+				obj.Transparency = 0
+			end
+		end
+	end
+end
+
+Commands.gravity = function(value)
+	workspace.Gravity = tonumber(value) or 196.2
+end
+
+Commands.fov = function(value)
+	local camera = workspace.CurrentCamera
+
+	if camera then
+		camera.FieldOfView = tonumber(value) or 70
+	end
+end
+
+Commands.noclip = function()
+	local character = LocalPlayer.Character
+
+	if not character then
+		return
+	end
+
+	for _, obj in ipairs(character:GetDescendants()) do
+		if obj:IsA("BasePart") then
+			obj.CanCollide = false
+		end
+	end
+end
+
+Commands.clip = function()
+	local character = LocalPlayer.Character
+
+	if not character then
+		return
+	end
+
+	for _, obj in ipairs(character:GetDescendants()) do
+		if obj:IsA("BasePart") then
+			obj.CanCollide = true
+		end
+	end
+end
+
+--// Command ausführen
+local function ExecuteCommand()
+	local text = CommandBox.Text
+
+	if text == "" then
+		return
+	end
+
+	local args = string.split(text, " ")
+	local commandName = string.lower(args[1])
+
+	table.remove(args, 1)
+
+	AddHistory("> " .. text)
+
+	if Commands[commandName] then
+		Running = true
+		Status.Text = "Ausgeführt für: " .. SelectedPlayer.Name
+
+		local success, err = pcall(function()
+			Commands[commandName](table.unpack(args))
+		end)
+
+		if success then
+			Status.Text = "✓ Command ausgeführt"
+		else
+			Status.Text = "✕ Fehler: " .. tostring(err)
+		end
+	else
+		Status.Text = "✕ Unbekannter Command: " .. commandName
+	end
+end
+
+Execute.MouseButton1Click:Connect(ExecuteCommand)
+
+CommandBox.FocusLost:Connect(function(enterPressed)
+	if enterPressed then
+		ExecuteCommand()
+	end
+end)
+
+Stop.MouseButton1Click:Connect(function()
+	Running = false
+	Status.Text = "■ Gestoppt"
+	AddHistory("> COMMAND STOPPED")
+end)
+
+--// F6 = Panel öffnen/schließen
+UIS.InputBegan:Connect(function(input, processed)
+	if processed then
+		return
+	end
+
+	if input.KeyCode == Enum.KeyCode.F6 then
+		Main.Visible = not Main.Visible
+	end
+end)
+
+--// Drag-System
+local dragging = false
+local dragStart
+local startPos
+
+Title.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = Main.Position
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+
+		Main.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+Status.Text = "Bereit • F6 zum Öffnen/Schließen"
