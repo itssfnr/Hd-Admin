@@ -1,8 +1,10 @@
---// ROBLOX LOCAL EXPLORER
---// LocalScript -> StarterPlayerScripts
+--// LOCAL STUDIO EXPLORER
+--// LocalScript
+--// F6 = Explorer öffnen/schließen
 
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
@@ -11,525 +13,75 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 -- CONFIG
 --==================================================
 
-local GUI_NAME = "LocalExplorer"
-
-local COLORS = {
-	Background = Color3.fromRGB(15, 17, 22),
-	Panel = Color3.fromRGB(22, 25, 32),
-	Panel2 = Color3.fromRGB(28, 32, 41),
-	Hover = Color3.fromRGB(40, 48, 62),
-	Selected = Color3.fromRGB(0, 110, 190),
-	Text = Color3.fromRGB(235, 240, 250),
-	Muted = Color3.fromRGB(145, 155, 170),
+local THEME = {
+	Background = Color3.fromRGB(30, 30, 30),
+	Panel = Color3.fromRGB(37, 37, 37),
+	Panel2 = Color3.fromRGB(45, 45, 45),
+	Border = Color3.fromRGB(65, 65, 65),
+	Text = Color3.fromRGB(235, 235, 235),
+	SubText = Color3.fromRGB(170, 170, 170),
 	Blue = Color3.fromRGB(0, 170, 255),
-	Green = Color3.fromRGB(70, 220, 140),
-	Red = Color3.fromRGB(255, 80, 90),
-	Yellow = Color3.fromRGB(255, 200, 70)
+	Selected = Color3.fromRGB(55, 90, 120),
+	Hover = Color3.fromRGB(50, 50, 50),
 }
 
 --==================================================
--- HELPERS
+-- GUI
 --==================================================
 
-local function New(class, properties, parent)
-	local object = Instance.new(class)
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "LocalStudioExplorer"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.Parent = PlayerGui
 
-	for property, value in pairs(properties or {}) do
-		object[property] = value
-	end
+local Main = Instance.new("Frame")
+Main.Size = UDim2.fromOffset(950, 620)
+Main.Position = UDim2.new(.5, -475, .5, -310)
+Main.BackgroundColor3 = THEME.Background
+Main.BorderColor3 = THEME.Border
+Main.Parent = Gui
 
-	object.Parent = parent
-	return object
-end
-
-local function Corner(object, radius)
-	New("UICorner", {
-		CornerRadius = UDim.new(0, radius)
-	}, object)
-end
-
-local function Stroke(object, color, transparency)
-	New("UIStroke", {
-		Color = color,
-		Transparency = transparency or 0,
-		Thickness = 1
-	}, object)
-end
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 7)
+MainCorner.Parent = Main
 
 --==================================================
--- SCREEN GUI
+-- TITLE BAR
 --==================================================
 
-local Gui = New("ScreenGui", {
-	Name = GUI_NAME,
-	ResetOnSpawn = false,
-	IgnoreGuiInset = true
-}, PlayerGui)
-
---==================================================
--- MAIN
---==================================================
-
-local Main = New("Frame", {
-	Size = UDim2.fromOffset(850, 560),
-	Position = UDim2.new(0.5, -425, 0.5, -280),
-	BackgroundColor3 = COLORS.Background,
-	BorderSizePixel = 0
-}, Gui)
-
-Corner(Main, 10)
-Stroke(Main, COLORS.Blue, 0.45)
-
---==================================================
--- TOP BAR
---==================================================
-
-local Top = New("Frame", {
-	Size = UDim2.new(1, 0, 0, 45),
-	BackgroundColor3 = COLORS.Panel,
-	BorderSizePixel = 0
-}, Main)
-
-Corner(Top, 10)
-
-local Title = New("TextLabel", {
-	Size = UDim2.fromOffset(250, 45),
-	Position = UDim2.fromOffset(15, 0),
-	BackgroundTransparency = 1,
-	Text = "▸  EXPLORER",
-	TextColor3 = COLORS.Text,
-	Font = Enum.Font.GothamBold,
-	TextSize = 17,
-	TextXAlignment = Enum.TextXAlignment.Left
-}, Top)
-
-local Status = New("TextLabel", {
-	Size = UDim2.fromOffset(250, 45),
-	Position = UDim2.new(1, -265, 0, 0),
-	BackgroundTransparency = 1,
-	Text = "LOCAL EXPLORER",
-	TextColor3 = COLORS.Muted,
-	Font = Enum.Font.Gotham,
-	TextSize = 11,
-	TextXAlignment = Enum.TextXAlignment.Right
-}, Top)
-
---==================================================
--- SEARCH
---==================================================
-
-local Search = New("TextBox", {
-	Size = UDim2.new(1, -30, 0, 36),
-	Position = UDim2.fromOffset(15, 55),
-	BackgroundColor3 = COLORS.Panel2,
-	BorderSizePixel = 0,
-	PlaceholderText = "🔍  Search objects...",
-	PlaceholderColor3 = COLORS.Muted,
-	Text = "",
-	TextColor3 = COLORS.Text,
-	Font = Enum.Font.Gotham,
-	TextSize = 12,
-	ClearTextOnFocus = false
-}, Main)
-
-Corner(Search, 7)
-Stroke(Search, COLORS.Blue, 0.65)
-
---==================================================
--- EXPLORER PANEL
---==================================================
-
-local TreePanel = New("Frame", {
-	Size = UDim2.new(0.56, -15, 1, -110),
-	Position = UDim2.fromOffset(15, 100),
-	BackgroundColor3 = COLORS.Panel,
-	BorderSizePixel = 0
-}, Main)
-
-Corner(TreePanel, 8)
-
-local Tree = New("ScrollingFrame", {
-	Size = UDim2.new(1, -10, 1, -10),
-	Position = UDim2.fromOffset(5, 5),
-	BackgroundTransparency = 1,
-	BorderSizePixel = 0,
-	ScrollBarThickness = 5,
-	CanvasSize = UDim2.new(0, 0, 0, 0)
-}, TreePanel)
-
---==================================================
--- PROPERTIES
---==================================================
-
-local Properties = New("Frame", {
-	Size = UDim2.new(0.44, -15, 1, -110),
-	Position = UDim2.new(0.56, 0, 0, 100),
-	BackgroundColor3 = COLORS.Panel,
-	BorderSizePixel = 0
-}, Main)
-
-Corner(Properties, 8)
-
-local PropertiesTitle = New("TextLabel", {
-	Size = UDim2.new(1, -20, 0, 40),
-	Position = UDim2.fromOffset(10, 0),
-	BackgroundTransparency = 1,
-	Text = "PROPERTIES",
-	TextColor3 = COLORS.Text,
-	Font = Enum.Font.GothamBold,
-	TextSize = 13,
-	TextXAlignment = Enum.TextXAlignment.Left
-}, Properties)
-
-local PropertyScroll = New("ScrollingFrame", {
-	Size = UDim2.new(1, -10, 1, -45),
-	Position = UDim2.fromOffset(5, 40),
-	BackgroundTransparency = 1,
-	BorderSizePixel = 0,
-	ScrollBarThickness = 4
-}, Properties)
-
-local PropertyLayout = New("UIListLayout", {
-	Padding = UDim.new(0, 2)
-}, PropertyScroll)
-
---==================================================
--- STATE
---==================================================
-
-local Selected = nil
-local Expanded = {}
-
---==================================================
--- CLEAR PROPERTIES
---==================================================
-
-local function ClearProperties()
-	for _, child in ipairs(PropertyScroll:GetChildren()) do
-		if child:IsA("Frame") or child:IsA("TextLabel") then
-			child:Destroy()
-		end
-	end
-end
-
---==================================================
--- PROPERTY ROW
---==================================================
-
-local function Property(name, value)
-	local Row = New("Frame", {
-		Size = UDim2.new(1, -5, 0, 31),
-		BackgroundColor3 = COLORS.Panel2,
-		BorderSizePixel = 0
-	}, PropertyScroll)
-
-	Corner(Row, 4)
-
-	New("TextLabel", {
-		Size = UDim2.new(0.42, 0, 1, 0),
-		Position = UDim2.fromOffset(8, 0),
-		BackgroundTransparency = 1,
-		Text = name,
-		TextColor3 = COLORS.Muted,
-		Font = Enum.Font.Gotham,
-		TextSize = 10,
-		TextXAlignment = Enum.TextXAlignment.Left
-	}, Row)
-
-	New("TextLabel", {
-		Size = UDim2.new(0.58, -8, 1, 0),
-		Position = UDim2.new(0.42, 0, 0, 0),
-		BackgroundTransparency = 1,
-		Text = tostring(value),
-		TextColor3 = COLORS.Text,
-		Font = Enum.Font.Code,
-		TextSize = 9,
-		TextXAlignment = Enum.TextXAlignment.Left
-	}, Row)
-end
-
---==================================================
--- SHOW PROPERTIES
---==================================================
-
-local function ShowProperties(object)
-	ClearProperties()
-
-	if not object then
-		return
-	end
-
-	PropertiesTitle.Text = "PROPERTIES  •  " .. object.Name
-
-	Property("Name", object.Name)
-	Property("ClassName", object.ClassName)
-	Property("Parent", object.Parent and object.Parent:GetFullName() or "nil")
-	Property("Archivable", object.Archivable)
-
-	if object:IsA("BasePart") then
-		Property("Position", object.Position)
-		Property("Size", object.Size)
-		Property("Anchored", object.Anchored)
-		Property("CanCollide", object.CanCollide)
-		Property("Transparency", object.Transparency)
-		Property("Material", object.Material)
-		Property("Color", object.Color)
-	end
-
-	if object:IsA("Model") then
-		local primary = object.PrimaryPart
-
-		Property(
-			"PrimaryPart",
-			primary and primary.Name or "None"
-		)
-	end
-
-	if object:IsA("Humanoid") then
-		Property("Health", object.Health)
-		Property("MaxHealth", object.MaxHealth)
-		Property("WalkSpeed", object.WalkSpeed)
-		Property("JumpPower", object.JumpPower)
-	end
-
-	if object:IsA("ValueBase") then
-		Property("Value", object.Value)
-	end
-
-	if object:IsA("Folder") then
-		Property("Children", #object:GetChildren())
-	end
-
-	Property("FullName", object:GetFullName())
-
-	PropertyScroll.CanvasSize = UDim2.fromOffset(
-		0,
-		PropertyLayout.AbsoluteContentSize.Y + 10
-	)
-end
-
---==================================================
--- ICON
---==================================================
-
-local function GetIcon(object)
-	if object:IsA("Folder") then
-		return "📁"
-	elseif object:IsA("Model") then
-		return "🧍"
-	elseif object:IsA("BasePart") then
-		return "⬛"
-	elseif object:IsA("Script") then
-		return "📜"
-	elseif object:IsA("LocalScript") then
-		return "📜"
-	elseif object:IsA("ModuleScript") then
-		return "📦"
-	elseif object:IsA("RemoteEvent") then
-		return "⚡"
-	elseif object:IsA("RemoteFunction") then
-		return "⚡"
-	elseif object:IsA("Tool") then
-		return "🔧"
-	elseif object:IsA("Sound") then
-		return "🔊"
-	elseif object:IsA("Camera") then
-		return "📷"
-	elseif object:IsA("Humanoid") then
-		return "☺"
-	else
-		return "◆"
-	end
-end
-
---==================================================
--- TREE
---==================================================
-
-local function MatchesSearch(object, query)
-	if query == "" then
-		return true
-	end
-
-	return string.find(
-		string.lower(object.Name),
-		query,
-		1,
-		true
-	) ~= nil
-end
-
-local function HasMatchingChild(object, query)
-	for _, child in ipairs(object:GetChildren()) do
-		if MatchesSearch(child, query) then
-			return true
-		end
-
-		if HasMatchingChild(child, query) then
-			return true
-		end
-	end
-
-	return false
-end
-
-local RenderTree
-
-local function CreateRow(object, depth)
-	local hasChildren = #object:GetChildren() > 0
-
-	local Row = New("TextButton", {
-		Size = UDim2.new(1, -5, 0, 27),
-		BackgroundColor3 =
-			object == Selected
-			and COLORS.Selected
-			or Color3.fromRGB(0, 0, 0),
-		BackgroundTransparency =
-			object == Selected
-			and 0
-			or 1,
-		BorderSizePixel = 0,
-		Text = "",
-		AutoButtonColor = false
-	}, Tree)
-
-	local indent = depth * 17
-
-	local Arrow = New("TextLabel", {
-		Size = UDim2.fromOffset(17, 27),
-		Position = UDim2.fromOffset(indent, 0),
-		BackgroundTransparency = 1,
-		Text = hasChildren
-			and (Expanded[object] and "▼" or "▶")
-			or "",
-		TextColor3 = COLORS.Muted,
-		Font = Enum.Font.GothamBold,
-		TextSize = 9
-	}, Row)
-
-	local Icon = New("TextLabel", {
-		Size = UDim2.fromOffset(25, 27),
-		Position = UDim2.fromOffset(indent + 17, 0),
-		BackgroundTransparency = 1,
-		Text = GetIcon(object),
-		TextSize = 12
-	}, Row)
-
-	local Name = New("TextLabel", {
-		Size = UDim2.new(1, -(indent + 48), 1, 0),
-		Position = UDim2.fromOffset(indent + 44, 0),
-		BackgroundTransparency = 1,
-		Text = object.Name,
-		TextColor3 = object == Selected
-			and Color3.fromRGB(255,255,255)
-			or COLORS.Text,
-		Font = Enum.Font.Gotham,
-		TextSize = 11,
-		TextXAlignment = Enum.TextXAlignment.Left
-	}, Row)
-
-	Row.MouseEnter:Connect(function()
-		if object ~= Selected then
-			Row.BackgroundColor3 = COLORS.Hover
-			Row.BackgroundTransparency = 0
-		end
-	end)
-
-	Row.MouseLeave:Connect(function()
-		if object ~= Selected then
-			Row.BackgroundTransparency = 1
-		end
-	end)
-
-	Row.MouseButton1Click:Connect(function()
-		Selected = object
-		ShowProperties(object)
-
-		if hasChildren then
-			Expanded[object] = not Expanded[object]
-		end
-
-		RenderTree()
-	end)
-end
-
-RenderTree = function()
-	for _, child in ipairs(Tree:GetChildren()) do
-		if child:IsA("TextButton") then
-			child:Destroy()
-		end
-	end
-
-	local query = string.lower(Search.Text)
-
-	local function RenderObject(object, depth)
-		local visible =
-			MatchesSearch(object, query)
-			or HasMatchingChild(object, query)
-
-		if not visible then
-			return
-		end
-
-		CreateRow(object, depth)
-
-		local shouldOpen =
-			Expanded[object]
-			or query ~= ""
-
-		if shouldOpen then
-			local children = object:GetChildren()
-
-			table.sort(children, function(a, b)
-				return string.lower(a.Name) < string.lower(b.Name)
-			end)
-
-			for _, child in ipairs(children) do
-				RenderObject(child, depth + 1)
-			end
-		end
-	end
-
-	local roots = game:GetChildren()
-
-	table.sort(roots, function(a, b)
-		return string.lower(a.Name) < string.lower(b.Name)
-	end)
-
-	for _, root in ipairs(roots) do
-		RenderObject(root, 0)
-	end
-
-	Tree.CanvasSize = UDim2.fromOffset(
-		0,
-		#Tree:GetChildren() * 27 + 20
-	)
-end
-
---==================================================
--- SEARCH
---==================================================
-
-Search:GetPropertyChangedSignal("Text"):Connect(function()
-	RenderTree()
+local Top = Instance.new("Frame")
+Top.Size = UDim2.new(1, 0, 0, 38)
+Top.BackgroundColor3 = THEME.Panel
+Top.BorderSizePixel = 0
+Top.Parent = Main
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -120, 1, 0)
+Title.Position = UDim2.fromOffset(14, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "Studio Explorer"
+Title.TextColor3 = THEME.Text
+Title.TextSize = 15
+Title.Font = Enum.Font.GothamMedium
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Top
+
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.fromOffset(38, 38)
+Close.Position = UDim2.new(1, -38, 0, 0)
+Close.BackgroundTransparency = 1
+Close.Text = "×"
+Close.TextSize = 25
+Close.TextColor3 = THEME.Text
+Close.Parent = Top
+
+Close.MouseButton1Click:Connect(function()
+	Gui.Enabled = false
 end)
 
 --==================================================
--- LIVE REFRESH
---==================================================
-
-game.DescendantAdded:Connect(function()
-	task.wait()
-	RenderTree()
-end)
-
-game.DescendantRemoving:Connect(function()
-	task.wait()
-	RenderTree()
-end)
-
---==================================================
--- DRAG
+-- DRAGGING
 --==================================================
 
 local dragging = false
@@ -544,10 +96,15 @@ Top.InputBegan:Connect(function(input)
 	end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
+Top.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
 	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
 		local delta = input.Position - dragStart
-
 		Main.Position = UDim2.new(
 			startPos.X.Scale,
 			startPos.X.Offset + delta.X,
@@ -557,36 +114,696 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = false
+--==================================================
+-- TOOLBAR
+--==================================================
+
+local Toolbar = Instance.new("Frame")
+Toolbar.Size = UDim2.new(1, 0, 0, 42)
+Toolbar.Position = UDim2.fromOffset(0, 38)
+Toolbar.BackgroundColor3 = THEME.Panel2
+Toolbar.BorderSizePixel = 0
+Toolbar.Parent = Main
+
+local Search = Instance.new("TextBox")
+Search.Size = UDim2.fromOffset(230, 30)
+Search.Position = UDim2.fromOffset(10, 6)
+Search.BackgroundColor3 = THEME.Background
+Search.BorderColor3 = THEME.Border
+Search.PlaceholderText = "🔎  Search..."
+Search.PlaceholderColor3 = THEME.SubText
+Search.TextColor3 = THEME.Text
+Search.TextSize = 13
+Search.ClearTextOnFocus = false
+Search.Parent = Toolbar
+
+local function toolbarButton(text, x)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.fromOffset(90, 30)
+	b.Position = UDim2.fromOffset(x, 6)
+	b.BackgroundColor3 = THEME.Panel
+	b.BorderColor3 = THEME.Border
+	b.Text = text
+	b.TextColor3 = THEME.Text
+	b.TextSize = 12
+	b.Font = Enum.Font.Gotham
+	b.Parent = Toolbar
+
+	b.MouseEnter:Connect(function()
+		b.BackgroundColor3 = THEME.Hover
+	end)
+
+	b.MouseLeave:Connect(function()
+		b.BackgroundColor3 = THEME.Panel
+	end)
+
+	return b
+end
+
+local AddButton = toolbarButton("+ Add", 250)
+local DuplicateButton = toolbarButton("Duplicate", 345)
+local DeleteButton = toolbarButton("Delete", 440)
+local RefreshButton = toolbarButton("Refresh", 535)
+
+--==================================================
+-- EXPLORER PANEL
+--==================================================
+
+local Explorer = Instance.new("Frame")
+Explorer.Size = UDim2.new(0, 540, 1, -80)
+Explorer.Position = UDim2.fromOffset(0, 80)
+Explorer.BackgroundColor3 = THEME.Background
+Explorer.BorderSizePixel = 0
+Explorer.Parent = Main
+
+local ExplorerTitle = Instance.new("TextLabel")
+ExplorerTitle.Size = UDim2.new(1, 0, 0, 30)
+ExplorerTitle.BackgroundColor3 = THEME.Panel
+ExplorerTitle.BorderSizePixel = 0
+ExplorerTitle.Text = "  EXPLORER"
+ExplorerTitle.TextColor3 = THEME.Text
+ExplorerTitle.TextSize = 12
+ExplorerTitle.Font = Enum.Font.GothamBold
+ExplorerTitle.TextXAlignment = Enum.TextXAlignment.Left
+ExplorerTitle.Parent = Explorer
+
+local Scroll = Instance.new("ScrollingFrame")
+Scroll.Size = UDim2.new(1, 0, 1, -30)
+Scroll.Position = UDim2.fromOffset(0, 30)
+Scroll.BackgroundTransparency = 1
+Scroll.BorderSizePixel = 0
+Scroll.ScrollBarThickness = 7
+Scroll.CanvasSize = UDim2.new()
+Scroll.Parent = Explorer
+
+local Layout = Instance.new("UIListLayout")
+Layout.SortOrder = Enum.SortOrder.LayoutOrder
+Layout.Parent = Scroll
+
+--==================================================
+-- PROPERTIES
+--==================================================
+
+local Properties = Instance.new("Frame")
+Properties.Size = UDim2.new(0, 410, 1, -80)
+Properties.Position = UDim2.new(1, -410, 0, 80)
+Properties.BackgroundColor3 = THEME.Background
+Properties.BorderSizePixel = 0
+Properties.Parent = Main
+
+local PropertiesTitle = Instance.new("TextLabel")
+PropertiesTitle.Size = UDim2.new(1, 0, 0, 30)
+PropertiesTitle.BackgroundColor3 = THEME.Panel
+PropertiesTitle.BorderSizePixel = 0
+PropertiesTitle.Text = "  PROPERTIES"
+PropertiesTitle.TextColor3 = THEME.Text
+PropertiesTitle.TextSize = 12
+PropertiesTitle.Font = Enum.Font.GothamBold
+PropertiesTitle.TextXAlignment = Enum.TextXAlignment.Left
+PropertiesTitle.Parent = Properties
+
+local PropScroll = Instance.new("ScrollingFrame")
+PropScroll.Size = UDim2.new(1, 0, 1, -30)
+PropScroll.Position = UDim2.fromOffset(0, 30)
+PropScroll.BackgroundTransparency = 1
+PropScroll.BorderSizePixel = 0
+PropScroll.ScrollBarThickness = 6
+PropScroll.Parent = Properties
+
+local PropLayout = Instance.new("UIListLayout")
+PropLayout.SortOrder = Enum.SortOrder.LayoutOrder
+PropLayout.Parent = PropScroll
+
+--==================================================
+-- ICONS
+--==================================================
+
+local Icons = {
+	Folder = "📁",
+	Model = "🧊",
+	Part = "⬜",
+	MeshPart = "🔷",
+	UnionOperation = "🔶",
+	BasePart = "⬜",
+	Script = "📜",
+	LocalScript = "📜",
+	ModuleScript = "📜",
+	RemoteEvent = "⚡",
+	RemoteFunction = "⚡",
+	Humanoid = "👤",
+	Camera = "📷",
+	Sound = "🔊",
+	Decal = "🖼",
+	Tool = "🔧",
+	Attachment = "📎",
+	Configuration = "⚙",
+	StringValue = "📝",
+	IntValue = "🔢",
+	NumberValue = "🔢",
+	BoolValue = "☑",
+	ObjectValue = "🔗",
+}
+
+local function getIcon(obj)
+	return Icons[obj.ClassName] or "▪"
+end
+
+--==================================================
+-- SELECTION
+--==================================================
+
+local selectedObject = nil
+
+local function clearProperties()
+	for _, v in ipairs(PropScroll:GetChildren()) do
+		if v:IsA("GuiObject") then
+			v:Destroy()
+		end
+	end
+end
+
+local function addProperty(name, value, editable, callback)
+
+	local Row = Instance.new("Frame")
+	Row.Size = UDim2.new(1, -10, 0, 34)
+	Row.BackgroundColor3 = THEME.Panel
+	Row.BorderColor3 = THEME.Border
+	Row.Parent = PropScroll
+
+	local NameLabel = Instance.new("TextLabel")
+	NameLabel.Size = UDim2.new(.42, 0, 1, 0)
+	NameLabel.BackgroundTransparency = 1
+	NameLabel.Text = "  " .. name
+	NameLabel.TextColor3 = THEME.Text
+	NameLabel.TextSize = 12
+	NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	NameLabel.Parent = Row
+
+	if editable then
+		local Box = Instance.new("TextBox")
+		Box.Size = UDim2.new(.56, -5, 1, -6)
+		Box.Position = UDim2.new(.42, 0, 0, 3)
+		Box.BackgroundColor3 = THEME.Background
+		Box.BorderColor3 = THEME.Border
+		Box.Text = tostring(value)
+		Box.TextColor3 = THEME.Text
+		Box.TextSize = 12
+		Box.ClearTextOnFocus = false
+		Box.Parent = Row
+
+		Box.FocusLost:Connect(function()
+			if callback then
+				callback(Box.Text)
+			end
+		end)
+	else
+		local Value = Instance.new("TextLabel")
+		Value.Size = UDim2.new(.56, -5, 1, 0)
+		Value.Position = UDim2.new(.42, 0, 0, 0)
+		Value.BackgroundTransparency = 1
+		Value.Text = tostring(value)
+		Value.TextColor3 = THEME.SubText
+		Value.TextSize = 12
+		Value.TextXAlignment = Enum.TextXAlignment.Left
+		Value.Parent = Row
+	end
+end
+
+local function showProperties(obj)
+
+	clearProperties()
+
+	if not obj then
+		PropertiesTitle.Text = "  PROPERTIES"
+		return
+	end
+
+	PropertiesTitle.Text = "  PROPERTIES  •  " .. obj.Name
+
+	addProperty("Name", obj.Name, true, function(v)
+		if v ~= "" then
+			obj.Name = v
+			RefreshButton:Activate()
+		end
+	end)
+
+	addProperty("ClassName", obj.ClassName, false)
+	addProperty("FullName", obj:GetFullName(), false)
+
+	if obj.Parent then
+		addProperty("Parent", obj.Parent:GetFullName(), false)
+	end
+
+	if obj:IsA("BasePart") then
+
+		addProperty("Position", tostring(obj.Position), false)
+
+		addProperty("Size", tostring(obj.Size), false)
+
+		addProperty("Transparency", obj.Transparency, true, function(v)
+			local n = tonumber(v)
+			if n then
+				obj.Transparency = math.clamp(n, 0, 1)
+			end
+		end)
+
+		addProperty("Anchored", obj.Anchored, true, function(v)
+			obj.Anchored = v:lower() == "true"
+		end)
+
+		addProperty("CanCollide", obj.CanCollide, true, function(v)
+			obj.CanCollide = v:lower() == "true"
+		end)
+
+	end
+
+	if obj:IsA("Model") then
+		addProperty("Pivot", tostring(obj:GetPivot().Position), false)
+	end
+
+	if obj:IsA("Humanoid") then
+		addProperty("Health", obj.Health, true, function(v)
+			local n = tonumber(v)
+			if n then
+				obj.Health = n
+			end
+		end)
+
+		addProperty("WalkSpeed", obj.WalkSpeed, true, function(v)
+			local n = tonumber(v)
+			if n then
+				obj.WalkSpeed = n
+			end
+		end)
+	end
+
+	if obj:IsA("ValueBase") then
+		addProperty("Value", obj.Value, true, function(v)
+			pcall(function()
+				if obj:IsA("StringValue") then
+					obj.Value = v
+				elseif obj:IsA("IntValue") then
+					obj.Value = tonumber(v) or obj.Value
+				elseif obj:IsA("NumberValue") then
+					obj.Value = tonumber(v) or obj.Value
+				elseif obj:IsA("BoolValue") then
+					obj.Value = v:lower() == "true"
+				end
+			end)
+		end)
+	end
+
+	PropScroll.CanvasSize = UDim2.fromOffset(0, PropLayout.AbsoluteContentSize.Y)
+end
+
+--==================================================
+-- TREE
+--==================================================
+
+local expanded = {}
+
+local function clearExplorer()
+	for _, v in ipairs(Scroll:GetChildren()) do
+		if v:IsA("GuiObject") then
+			v:Destroy()
+		end
+	end
+end
+
+local function createNode(obj, depth, order)
+
+	local Button = Instance.new("TextButton")
+	Button.Size = UDim2.new(1, -8, 0, 24)
+	Button.BackgroundTransparency = 1
+	Button.BorderSizePixel = 0
+	Button.Text = ""
+	Button.LayoutOrder = order
+	Button.Parent = Scroll
+
+	local Arrow = Instance.new("TextLabel")
+	Arrow.Size = UDim2.fromOffset(18, 24)
+	Arrow.Position = UDim2.fromOffset(depth * 18, 0)
+	Arrow.BackgroundTransparency = 1
+	Arrow.TextColor3 = THEME.SubText
+	Arrow.TextSize = 11
+	Arrow.Text = #obj:GetChildren() > 0 and (expanded[obj] and "▼" or "▶") or ""
+	Arrow.Parent = Button
+
+	local Icon = Instance.new("TextLabel")
+	Icon.Size = UDim2.fromOffset(22, 24)
+	Icon.Position = UDim2.fromOffset(depth * 18 + 18, 0)
+	Icon.BackgroundTransparency = 1
+	Icon.Text = getIcon(obj)
+	Icon.TextSize = 14
+	Icon.Parent = Button
+
+	local Label = Instance.new("TextLabel")
+	Label.Size = UDim2.new(1, -(depth * 18 + 45), 1, 0)
+	Label.Position = UDim2.fromOffset(depth * 18 + 42, 0)
+	Label.BackgroundTransparency = 1
+	Label.Text = obj.Name
+	Label.TextColor3 = THEME.Text
+	Label.TextSize = 12
+	Label.TextXAlignment = Enum.TextXAlignment.Left
+	Label.Parent = Button
+
+	Button.MouseEnter:Connect(function()
+		if selectedObject ~= obj then
+			Button.BackgroundTransparency = 0
+			Button.BackgroundColor3 = THEME.Hover
+		end
+	end)
+
+	Button.MouseLeave:Connect(function()
+		if selectedObject ~= obj then
+			Button.BackgroundTransparency = 1
+		end
+	end)
+
+	Button.MouseButton1Click:Connect(function()
+
+		selectedObject = obj
+
+		for _, item in ipairs(Scroll:GetChildren()) do
+			if item:IsA("TextButton") then
+				item.BackgroundTransparency = 1
+			end
+		end
+
+		Button.BackgroundTransparency = 0
+		Button.BackgroundColor3 = THEME.Selected
+
+		if #obj:GetChildren() > 0 then
+			expanded[obj] = not expanded[obj]
+		end
+
+		showProperties(obj)
+		task.defer(function()
+			-- refresh tree
+		end)
+	end)
+
+	return Button
+end
+
+local function buildTree()
+
+	clearExplorer()
+
+	local query = Search.Text:lower()
+	local order = 0
+
+	local function recurse(parent, depth)
+
+		for _, obj in ipairs(parent:GetChildren()) do
+
+			if query == "" or obj.Name:lower():find(query, 1, true) then
+
+				order += 1
+				createNode(obj, depth, order)
+
+				if expanded[obj] then
+					recurse(obj, depth + 1)
+				end
+
+			elseif query ~= "" then
+
+				local hasMatch = false
+
+				for _, d in ipairs(obj:GetDescendants()) do
+					if d.Name:lower():find(query, 1, true) then
+						hasMatch = true
+						break
+					end
+				end
+
+				if hasMatch then
+					order += 1
+					createNode(obj, depth, order)
+					expanded[obj] = true
+					recurse(obj, depth + 1)
+				end
+			end
+		end
+	end
+
+	-- Roblox Studio-style roots
+	local roots = {
+		game:GetService("Workspace"),
+		game:GetService("Players"),
+		game:GetService("Lighting"),
+		game:GetService("ReplicatedStorage"),
+		game:GetService("ServerStorage"),
+		game:GetService("StarterGui"),
+		game:GetService("StarterPack"),
+		game:GetService("StarterPlayer"),
+		game:GetService("SoundService"),
+		game:GetService("Teams"),
+		game:GetService("MaterialService"),
+		game:GetService("TextChatService"),
+	}
+
+	for _, root in ipairs(roots) do
+		if root then
+			order += 1
+			createNode(root, 0, order)
+
+			if expanded[root] then
+				recurse(root, 1)
+			end
+		end
+	end
+
+	Scroll.CanvasSize = UDim2.fromOffset(0, Layout.AbsoluteContentSize.Y + 10)
+end
+
+--==================================================
+-- ADD OBJECT MENU
+--==================================================
+
+local AddMenu = Instance.new("Frame")
+AddMenu.Size = UDim2.fromOffset(230, 350)
+AddMenu.Position = UDim2.fromOffset(250, 115)
+AddMenu.BackgroundColor3 = THEME.Panel
+AddMenu.BorderColor3 = THEME.Border
+AddMenu.Visible = false
+AddMenu.ZIndex = 20
+AddMenu.Parent = Main
+
+local AddTitle = Instance.new("TextLabel")
+AddTitle.Size = UDim2.new(1, 0, 0, 35)
+AddTitle.BackgroundColor3 = THEME.Panel2
+AddTitle.Text = "Create Object"
+AddTitle.TextColor3 = THEME.Text
+AddTitle.TextSize = 13
+AddTitle.Parent = AddMenu
+
+local classes = {
+	"Part",
+	"Model",
+	"Folder",
+	"Attachment",
+	"MeshPart",
+	"Script",
+	"LocalScript",
+	"ModuleScript",
+	"Sound",
+	"Decal",
+	"StringValue",
+	"IntValue",
+	"NumberValue",
+	"BoolValue",
+	"ObjectValue",
+	"Configuration",
+}
+
+local function createObject(className)
+
+	if not selectedObject then
+		return
+	end
+
+	local parent = selectedObject
+
+	if not parent:IsA("Instance") then
+		return
+	end
+
+	local success, obj = pcall(function()
+		return Instance.new(className)
+	end)
+
+	if success and obj then
+		obj.Name = className
+		obj.Parent = parent
+
+		if obj:IsA("BasePart") then
+			obj.Size = Vector3.new(4, 1, 4)
+
+			if parent:IsA("BasePart") then
+				obj.CFrame = parent.CFrame + Vector3.new(0, 3, 0)
+			elseif parent:IsA("Model") then
+				obj.Position = parent:GetPivot().Position + Vector3.new(0, 3, 0)
+			else
+				obj.Position = Vector3.new(0, 5, 0)
+			end
+		end
+
+		expanded[parent] = true
+		buildTree()
+	end
+
+	AddMenu.Visible = false
+end
+
+for i, className in ipairs(classes) do
+
+	local Button = Instance.new("TextButton")
+	Button.Size = UDim2.new(1, -10, 0, 28)
+	Button.Position = UDim2.fromOffset(5, 38 + (i - 1) * 29)
+	Button.BackgroundColor3 = THEME.Panel
+	Button.BorderColor3 = THEME.Border
+	Button.Text = getIcon({ClassName = className}) .. "  " .. className
+	Button.TextColor3 = THEME.Text
+	Button.TextSize = 12
+	Button.TextXAlignment = Enum.TextXAlignment.Left
+	Button.Parent = AddMenu
+
+	Button.MouseButton1Click:Connect(function()
+		createObject(className)
+	end)
+end
+
+AddButton.MouseButton1Click:Connect(function()
+	AddMenu.Visible = not AddMenu.Visible
+end)
+
+--==================================================
+-- DELETE
+--==================================================
+
+DeleteButton.MouseButton1Click:Connect(function()
+
+	if selectedObject and selectedObject ~= workspace then
+		pcall(function()
+			selectedObject:Destroy()
+		end)
+
+		selectedObject = nil
+		clearProperties()
+		buildTree()
+	end
+
+end)
+
+--==================================================
+-- DUPLICATE
+--==================================================
+
+DuplicateButton.MouseButton1Click:Connect(function()
+
+	if selectedObject and selectedObject ~= workspace then
+
+		local success, clone = pcall(function()
+			return selectedObject:Clone()
+		end)
+
+		if success and clone and selectedObject.Parent then
+
+			clone.Name = selectedObject.Name .. "_Copy"
+			clone.Parent = selectedObject.Parent
+
+			if clone:IsA("BasePart") then
+				clone.Position += Vector3.new(3, 0, 0)
+			elseif clone:IsA("Model") then
+				clone:PivotTo(clone:GetPivot() + Vector3.new(3, 0, 0))
+			end
+
+			buildTree()
+		end
+	end
+
+end)
+
+--==================================================
+-- REFRESH
+--==================================================
+
+RefreshButton.MouseButton1Click:Connect(function()
+	buildTree()
+
+	if selectedObject then
+		showProperties(selectedObject)
 	end
 end)
+
+Search:GetPropertyChangedSignal("Text"):Connect(function()
+	buildTree()
+end)
+
+--==================================================
+-- LIVE UPDATE
+--==================================================
+
+local function connectContainer(container)
+
+	container.DescendantAdded:Connect(function()
+		task.wait()
+		buildTree()
+	end)
+
+	container.DescendantRemoving:Connect(function()
+		task.wait()
+		buildTree()
+	end)
+end
+
+for _, root in ipairs({
+	workspace,
+	game:GetService("ReplicatedStorage"),
+	game:GetService("StarterGui"),
+	game:GetService("StarterPack"),
+	game:GetService("StarterPlayer"),
+	game:GetService("Lighting"),
+}) do
+	connectContainer(root)
+end
 
 --==================================================
 -- F6 TOGGLE
 --==================================================
 
-local Visible = true
+UIS.InputBegan:Connect(function(input, processed)
 
-UserInputService.InputBegan:Connect(function(input, processed)
 	if processed then
 		return
 	end
 
 	if input.KeyCode == Enum.KeyCode.F6 then
-		Visible = not Visible
-		Main.Visible = Visible
+		Gui.Enabled = not Gui.Enabled
 	end
+
 end)
 
 --==================================================
 -- INITIAL
 --==================================================
 
-Expanded[workspace] = true
-Expanded[Players] = true
+Gui.Enabled = true
 
-RenderTree()
+task.wait(1)
 
-print("Local Explorer geladen.")
+-- Start with Workspace expanded
+expanded[workspace] = true
+
+buildTree()
+
+PropScroll.CanvasSize = UDim2.fromOffset(0, PropLayout.AbsoluteContentSize.Y)
+
+PropLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	PropScroll.CanvasSize = UDim2.fromOffset(0, PropLayout.AbsoluteContentSize.Y + 10)
+end)
+
+Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	Scroll.CanvasSize = UDim2.fromOffset(0, Layout.AbsoluteContentSize.Y + 10)
+end)
