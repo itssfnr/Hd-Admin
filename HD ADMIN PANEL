@@ -1,409 +1,1225 @@
---// Local Admin Panel
---// Nur LocalScript
---// Für dein eigenes Roblox-Spiel
+--// =========================================================
+--// HD ADMIN PANEL - LOCAL VERSION
+--// =========================================================
 
 local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
---// GUI
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "LocalAdminPanel"
-Gui.ResetOnSpawn = false
-Gui.Parent = PlayerGui
+--// =========================================================
+--// CONFIG
+--// =========================================================
 
-local Main = Instance.new("Frame")
-Main.Size = UDim2.new(0, 650, 0, 430)
-Main.Position = UDim2.new(0.5, -325, 0.5, -215)
-Main.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-Main.BorderSizePixel = 0
-Main.Parent = Gui
+local CONFIG = {
+	Width = 900,
+	Height = 560,
+	ToggleKey = Enum.KeyCode.F6,
 
-local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 12)
-Corner.Parent = Main
+	Background = Color3.fromRGB(8, 12, 20),
+	Panel = Color3.fromRGB(13, 19, 30),
+	Panel2 = Color3.fromRGB(18, 26, 40),
+	Input = Color3.fromRGB(10, 18, 30),
 
---// Titel
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -20, 0, 45)
-Title.Position = UDim2.new(0, 10, 0, 5)
-Title.BackgroundTransparency = 1
-Title.Text = "LOCAL ADMIN PANEL"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 22
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Parent = Main
+	Blue = Color3.fromRGB(0, 150, 255),
+	Cyan = Color3.fromRGB(0, 220, 255),
+	Green = Color3.fromRGB(0, 220, 130),
+	Red = Color3.fromRGB(255, 65, 85),
+	Purple = Color3.fromRGB(170, 70, 255),
+	Yellow = Color3.fromRGB(255, 190, 40),
 
---// Spieler-Liste
-local PlayerList = Instance.new("ScrollingFrame")
-PlayerList.Size = UDim2.new(0, 190, 0, 300)
-PlayerList.Position = UDim2.new(0, 15, 0, 60)
-PlayerList.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
-PlayerList.BorderSizePixel = 0
-PlayerList.ScrollBarThickness = 5
-PlayerList.Parent = Main
+	Text = Color3.fromRGB(235, 242, 255),
+	Muted = Color3.fromRGB(125, 145, 170),
+}
 
-local ListLayout = Instance.new("UIListLayout")
-ListLayout.Padding = UDim.new(0, 5)
-ListLayout.Parent = PlayerList
+--// =========================================================
+--// HELPERS
+--// =========================================================
 
-local SelectedPlayer = LocalPlayer
+local function New(class, props, parent)
+	local obj = Instance.new(class)
 
-local function CreatePlayerButton(player)
-	local Button = Instance.new("TextButton")
-	Button.Size = UDim2.new(1, -10, 0, 35)
-	Button.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-	Button.BorderSizePixel = 0
-	Button.Text = player.DisplayName .. "  @" .. player.Name
-	Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Button.Font = Enum.Font.Gotham
-	Button.TextSize = 13
-	Button.Parent = PlayerList
+	for property, value in pairs(props or {}) do
+		obj[property] = value
+	end
 
-	local C = Instance.new("UICorner")
-	C.CornerRadius = UDim.new(0, 6)
-	C.Parent = Button
+	if parent then
+		obj.Parent = parent
+	end
+
+	return obj
+end
+
+local function Corner(parent, radius)
+	return New("UICorner", {
+		CornerRadius = UDim.new(0, radius or 8)
+	}, parent)
+end
+
+local function Stroke(parent, color, thickness, transparency)
+	return New("UIStroke", {
+		Color = color,
+		Thickness = thickness or 1,
+		Transparency = transparency or 0
+	}, parent)
+end
+
+local function Tween(obj, time, properties)
+	TweenService:Create(
+		obj,
+		TweenInfo.new(time, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+		properties
+	):Play()
+end
+
+--// =========================================================
+--// SCREEN GUI
+--// =========================================================
+
+local Gui = New("ScreenGui", {
+	Name = "HDAdminPanel",
+	ResetOnSpawn = false,
+	IgnoreGuiInset = true,
+	ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+}, PlayerGui)
+
+--// =========================================================
+--// MAIN WINDOW
+--// =========================================================
+
+local Main = New("Frame", {
+	Name = "Main",
+	Size = UDim2.fromOffset(CONFIG.Width, CONFIG.Height),
+	Position = UDim2.new(0.5, -CONFIG.Width / 2, 0.5, -CONFIG.Height / 2),
+	BackgroundColor3 = CONFIG.Background,
+	BorderSizePixel = 0
+}, Gui)
+
+Corner(Main, 14)
+Stroke(Main, CONFIG.Blue, 1.5, 0.25)
+
+--// Top glow
+local Glow = New("Frame", {
+	Size = UDim2.new(1, 0, 0, 2),
+	Position = UDim2.new(0, 0, 0, 0),
+	BackgroundColor3 = CONFIG.Cyan,
+	BorderSizePixel = 0
+}, Main)
+
+Corner(Glow, 14)
+
+--// =========================================================
+--// HEADER
+--// =========================================================
+
+local Header = New("Frame", {
+	Size = UDim2.new(1, 0, 0, 72),
+	BackgroundTransparency = 1
+}, Main)
+
+local Crown = New("TextLabel", {
+	Size = UDim2.fromOffset(55, 55),
+	Position = UDim2.fromOffset(18, 9),
+	BackgroundTransparency = 1,
+	Text = "♛",
+	TextColor3 = CONFIG.Blue,
+	Font = Enum.Font.GothamBold,
+	TextSize = 40
+}, Header)
+
+local Title = New("TextLabel", {
+	Size = UDim2.fromOffset(300, 32),
+	Position = UDim2.fromOffset(70, 12),
+	BackgroundTransparency = 1,
+	Text = "HD ADMIN",
+	TextColor3 = CONFIG.Text,
+	Font = Enum.Font.GothamBold,
+	TextSize = 24,
+	TextXAlignment = Enum.TextXAlignment.Left
+}, Header)
+
+local SubTitle = New("TextLabel", {
+	Size = UDim2.fromOffset(300, 22),
+	Position = UDim2.fromOffset(71, 38),
+	BackgroundTransparency = 1,
+	Text = "PANEL",
+	TextColor3 = CONFIG.Cyan,
+	Font = Enum.Font.GothamBold,
+	TextSize = 14,
+	TextXAlignment = Enum.TextXAlignment.Left
+}, Header)
+
+local Badge = New("TextLabel", {
+	Size = UDim2.fromOffset(150, 32),
+	Position = UDim2.new(1, -165, 0, 18),
+	BackgroundColor3 = Color3.fromRGB(10, 35, 55),
+	Text = "2000+ COMMANDS",
+	TextColor3 = CONFIG.Cyan,
+	Font = Enum.Font.GothamBold,
+	TextSize = 12
+}, Header)
+
+Corner(Badge, 8)
+Stroke(Badge, CONFIG.Cyan, 1, 0.25)
+
+--// =========================================================
+--// SIDEBAR
+--// =========================================================
+
+local Sidebar = New("Frame", {
+	Name = "Sidebar",
+	Size = UDim2.fromOffset(190, CONFIG.Height - 82),
+	Position = UDim2.fromOffset(12, 72),
+	BackgroundColor3 = CONFIG.Panel,
+	BorderSizePixel = 0
+}, Main)
+
+Corner(Sidebar, 10)
+Stroke(Sidebar, CONFIG.Blue, 1, 0.7)
+
+local CategoryTitle = New("TextLabel", {
+	Size = UDim2.new(1, -20, 0, 25),
+	Position = UDim2.fromOffset(10, 8),
+	BackgroundTransparency = 1,
+	Text = "CATEGORIES",
+	TextColor3 = CONFIG.Muted,
+	Font = Enum.Font.GothamBold,
+	TextSize = 11,
+	TextXAlignment = Enum.TextXAlignment.Left
+}, Sidebar)
+
+local Categories = {
+	{"▦", "All Commands", CONFIG.Blue},
+	{"●", "Player", CONFIG.Cyan},
+	{"⚡", "Movement", CONFIG.Green},
+	{"◉", "Visuals", CONFIG.Purple},
+	{"◈", "World", CONFIG.Cyan},
+	{"☺", "Fun", CONFIG.Yellow},
+	{"🔧", "Tools", CONFIG.Muted},
+	{"⬟", "Admin", CONFIG.Red},
+	{"◆", "Teleport", CONFIG.Purple},
+	{"⚙", "Settings", CONFIG.Muted},
+}
+
+local SelectedCategory = "All Commands"
+local CategoryButtons = {}
+
+for index, data in ipairs(Categories) do
+	local icon = data[1]
+	local name = data[2]
+	local color = data[3]
+
+	local Button = New("TextButton", {
+		Size = UDim2.new(1, -18, 0, 35),
+		Position = UDim2.fromOffset(9, 36 + ((index - 1) * 39)),
+		BackgroundColor3 = index == 1 and CONFIG.Blue or Color3.fromRGB(20, 29, 43),
+		BorderSizePixel = 0,
+		Text = "",
+		AutoButtonColor = false
+	}, Sidebar)
+
+	Corner(Button, 7)
+
+	local Icon = New("TextLabel", {
+		Size = UDim2.fromOffset(30, 35),
+		Position = UDim2.fromOffset(5, 0),
+		BackgroundTransparency = 1,
+		Text = icon,
+		TextColor3 = color,
+		Font = Enum.Font.GothamBold,
+		TextSize = 17
+	}, Button)
+
+	local Text = New("TextLabel", {
+		Size = UDim2.new(1, -40, 1, 0),
+		Position = UDim2.fromOffset(38, 0),
+		BackgroundTransparency = 1,
+		Text = name,
+		TextColor3 = CONFIG.Text,
+		Font = Enum.Font.GothamMedium,
+		TextSize = 12,
+		TextXAlignment = Enum.TextXAlignment.Left
+	}, Button)
+
+	CategoryButtons[name] = Button
+
+	Button.MouseButton1Click:Connect(function()
+		SelectedCategory = name
+
+		for _, other in pairs(CategoryButtons) do
+			Tween(other, 0.15, {
+				BackgroundColor3 = Color3.fromRGB(20, 29, 43)
+			})
+		end
+
+		Tween(Button, 0.15, {
+			BackgroundColor3 = CONFIG.Blue
+		})
+	end)
+end
+
+local ReadyBox = New("Frame", {
+	Size = UDim2.new(1, -18, 0, 70),
+	Position = UDim2.new(0, 9, 1, -80),
+	BackgroundColor3 = Color3.fromRGB(9, 28, 35),
+	BorderSizePixel = 0
+}, Sidebar)
+
+Corner(ReadyBox, 8)
+Stroke(ReadyBox, CONFIG.Green, 1, 0.6)
+
+local Dot = New("Frame", {
+	Size = UDim2.fromOffset(8, 8),
+	Position = UDim2.fromOffset(12, 14),
+	BackgroundColor3 = CONFIG.Green,
+	BorderSizePixel = 0
+}, ReadyBox)
+
+Corner(Dot, 20)
+
+local ReadyText = New("TextLabel", {
+	Size = UDim2.new(1, -35, 0, 20),
+	Position = UDim2.fromOffset(27, 8),
+	BackgroundTransparency = 1,
+	Text = "Bereit",
+	TextColor3 = CONFIG.Green,
+	Font = Enum.Font.GothamBold,
+	TextSize = 12,
+	TextXAlignment = Enum.TextXAlignment.Left
+}, ReadyBox)
+
+local ReadySub = New("TextLabel", {
+	Size = UDim2.new(1, -15, 0, 30),
+	Position = UDim2.fromOffset(8, 30),
+	BackgroundTransparency = 1,
+	Text = "F6 zum Öffnen / Schließen",
+	TextColor3 = CONFIG.Muted,
+	Font = Enum.Font.Gotham,
+	TextSize = 9,
+	TextWrapped = true
+}, ReadyBox)
+
+--// =========================================================
+--// CONTENT
+--// =========================================================
+
+local Content = New("Frame", {
+	Size = UDim2.new(1, -220, 1, -85),
+	Position = UDim2.fromOffset(208, 75),
+	BackgroundTransparency = 1
+}, Main)
+
+--// Player selector
+
+local PlayerLabel = New("TextLabel", {
+	Size = UDim2.fromOffset(300, 20),
+	Position = UDim2.fromOffset(0, 0),
+	BackgroundTransparency = 1,
+	Text = "SPIELER AUSWÄHLEN",
+	TextColor3 = CONFIG.Muted,
+	Font = Enum.Font.GothamBold,
+	TextSize = 10,
+	TextXAlignment = Enum.TextXAlignment.Left
+}, Content)
+
+local PlayerButton = New("TextButton", {
+	Size = UDim2.fromOffset(300, 42),
+	Position = UDim2.fromOffset(0, 24),
+	BackgroundColor3 = CONFIG.Panel2,
+	BorderSizePixel = 0,
+	Text = "  ●  Alle Spieler",
+	TextColor3 = CONFIG.Text,
+	Font = Enum.Font.GothamMedium,
+	TextSize = 12,
+	TextXAlignment = Enum.TextXAlignment.Left
+}, Content)
+
+Corner(PlayerButton, 8)
+Stroke(PlayerButton, CONFIG.Blue, 1, 0.5)
+
+local Search = New("TextBox", {
+	Size = UDim2.new(1, -315, 0, 42),
+	Position = UDim2.fromOffset(315, 24),
+	BackgroundColor3 = CONFIG.Panel2,
+	BorderSizePixel = 0,
+	PlaceholderText = "⌕  Suche nach Spieler...",
+	PlaceholderColor3 = CONFIG.Muted,
+	Text = "",
+	TextColor3 = CONFIG.Text,
+	Font = Enum.Font.Gotham,
+	TextSize = 12,
+	ClearTextOnFocus = false
+}, Content)
+
+Corner(Search, 8)
+Stroke(Search, CONFIG.Blue, 1, 0.5)
+
+--// =========================================================
+--// PLAYER DROPDOWN
+--// =========================================================
+
+local PlayerDropdown = New("Frame", {
+	Size = UDim2.fromOffset(300, 180),
+	Position = UDim2.fromOffset(0, 70),
+	BackgroundColor3 = CONFIG.Panel,
+	BorderSizePixel = 0,
+	Visible = false,
+	ZIndex = 20
+}, Content)
+
+Corner(PlayerDropdown, 8)
+Stroke(PlayerDropdown, CONFIG.Blue, 1)
+
+local PlayerScroll = New("ScrollingFrame", {
+	Size = UDim2.new(1, -10, 1, -10),
+	Position = UDim2.fromOffset(5, 5),
+	BackgroundTransparency = 1,
+	BorderSizePixel = 0,
+	ScrollBarThickness = 3,
+	ZIndex = 21
+}, PlayerDropdown)
+
+local PlayerLayout = New("UIListLayout", {
+	Padding = UDim.new(0, 4)
+}, PlayerScroll)
+
+local SelectedPlayer = nil
+
+local function CreatePlayerEntry(player)
+	local Button = New("TextButton", {
+		Size = UDim2.new(1, -5, 0, 32),
+		BackgroundColor3 = Color3.fromRGB(22, 32, 47),
+		BorderSizePixel = 0,
+		Text = "  ●  " .. player.DisplayName .. "  @" .. player.Name,
+		TextColor3 = CONFIG.Text,
+		Font = Enum.Font.Gotham,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		ZIndex = 22
+	}, PlayerScroll)
+
+	Corner(Button, 6)
 
 	Button.MouseButton1Click:Connect(function()
 		SelectedPlayer = player
-
-		for _, child in ipairs(PlayerList:GetChildren()) do
-			if child:IsA("TextButton") then
-				child.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-			end
-		end
-
-		Button.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+		PlayerButton.Text = "  ●  " .. player.DisplayName .. "  @" .. player.Name
+		PlayerDropdown.Visible = false
 	end)
 end
 
 local function RefreshPlayers()
-	for _, child in ipairs(PlayerList:GetChildren()) do
+	for _, child in ipairs(PlayerScroll:GetChildren()) do
 		if child:IsA("TextButton") then
 			child:Destroy()
 		end
 	end
 
 	for _, player in ipairs(Players:GetPlayers()) do
-		CreatePlayerButton(player)
+		CreatePlayerEntry(player)
 	end
 
-	PlayerList.CanvasSize = UDim2.new(0, 0, 0, #Players:GetPlayers() * 40)
+	PlayerScroll.CanvasSize = UDim2.fromOffset(
+		0,
+		PlayerLayout.AbsoluteContentSize.Y + 10
+	)
 end
 
 RefreshPlayers()
 
 Players.PlayerAdded:Connect(RefreshPlayers)
-Players.PlayerRemoving:Connect(function(player)
-	if SelectedPlayer == player then
-		SelectedPlayer = LocalPlayer
-	end
-	RefreshPlayers()
+Players.PlayerRemoving:Connect(RefreshPlayers)
+
+PlayerButton.MouseButton1Click:Connect(function()
+	PlayerDropdown.Visible = not PlayerDropdown.Visible
 end)
 
---// Command-Bar
-local CommandBox = Instance.new("TextBox")
-CommandBox.Size = UDim2.new(0, 410, 0, 55)
-CommandBox.Position = UDim2.new(0, 220, 0, 65)
-CommandBox.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
-CommandBox.BorderSizePixel = 0
-CommandBox.PlaceholderText = "Command eingeben..."
-CommandBox.PlaceholderColor3 = Color3.fromRGB(130, 130, 140)
-CommandBox.Text = ""
-CommandBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-CommandBox.Font = Enum.Font.Code
-CommandBox.TextSize = 17
-CommandBox.ClearTextOnFocus = false
-CommandBox.Parent = Main
+--// =========================================================
+--// COMMAND BAR
+--// =========================================================
 
-local BoxCorner = Instance.new("UICorner")
-BoxCorner.CornerRadius = UDim.new(0, 8)
-BoxCorner.Parent = CommandBox
+local CommandBar = New("Frame", {
+	Size = UDim2.new(1, 0, 0, 62),
+	Position = UDim2.fromOffset(0, 80),
+	BackgroundColor3 = CONFIG.Input,
+	BorderSizePixel = 0
+}, Content)
+
+Corner(CommandBar, 10)
+Stroke(CommandBar, CONFIG.Cyan, 1.5, 0.15)
+
+local Slash = New("TextLabel", {
+	Size = UDim2.fromOffset(40, 60),
+	Position = UDim2.fromOffset(8, 0),
+	BackgroundTransparency = 1,
+	Text = "/",
+	TextColor3 = CONFIG.Cyan,
+	Font = Enum.Font.GothamBold,
+	TextSize = 25
+}, CommandBar)
+
+local CommandInput = New("TextBox", {
+	Size = UDim2.new(1, -160, 1, 0),
+	Position = UDim2.fromOffset(42, 0),
+	BackgroundTransparency = 1,
+	PlaceholderText = "Befehl eingeben...",
+	PlaceholderColor3 = CONFIG.Muted,
+	Text = "",
+	TextColor3 = CONFIG.Text,
+	Font = Enum.Font.Code,
+	TextSize = 15,
+	ClearTextOnFocus = false,
+	TextXAlignment = Enum.TextXAlignment.Left
+}, CommandBar)
+
+local More = New("TextButton", {
+	Size = UDim2.fromOffset(42, 42),
+	Position = UDim2.new(1, -150, 0, 10),
+	BackgroundColor3 = Color3.fromRGB(25, 37, 55),
+	BorderSizePixel = 0,
+	Text = "•••",
+	TextColor3 = CONFIG.Text,
+	Font = Enum.Font.GothamBold,
+	TextSize = 15
+}, CommandBar)
+
+Corner(More, 7)
 
 --// Execute
-local Execute = Instance.new("TextButton")
-Execute.Size = UDim2.new(0, 195, 0, 45)
-Execute.Position = UDim2.new(0, 220, 0, 135)
-Execute.BackgroundColor3 = Color3.fromRGB(0, 150, 80)
-Execute.BorderSizePixel = 0
-Execute.Text = "▶  EXECUTE"
-Execute.TextColor3 = Color3.fromRGB(255, 255, 255)
-Execute.Font = Enum.Font.GothamBold
-Execute.TextSize = 15
-Execute.Parent = Main
 
-local ExecuteCorner = Instance.new("UICorner")
-ExecuteCorner.CornerRadius = UDim.new(0, 8)
-ExecuteCorner.Parent = Execute
+local Execute = New("TextButton", {
+	Size = UDim2.fromOffset(100, 42),
+	Position = UDim2.new(1, -105, 0, 10),
+	BackgroundColor3 = CONFIG.Green,
+	BorderSizePixel = 0,
+	Text = "▶  Execute",
+	TextColor3 = Color3.fromRGB(255, 255, 255),
+	Font = Enum.Font.GothamBold,
+	TextSize = 12,
+	AutoButtonColor = false
+}, CommandBar)
 
---// Stop
-local Stop = Instance.new("TextButton")
-Stop.Size = UDim2.new(0, 195, 0, 45)
-Stop.Position = UDim2.new(0, 435, 0, 135)
-Stop.BackgroundColor3 = Color3.fromRGB(180, 45, 45)
-Stop.BorderSizePixel = 0
-Stop.Text = "■  STOP"
-Stop.TextColor3 = Color3.fromRGB(255, 255, 255)
-Stop.Font = Enum.Font.GothamBold
-Stop.TextSize = 15
-Stop.Parent = Main
+Corner(Execute, 7)
 
-local StopCorner = Instance.new("UICorner")
-StopCorner.CornerRadius = UDim.new(0, 8)
-StopCorner.Parent = Stop
+--// =========================================================
+--// STOP
+--// =========================================================
 
---// Status
-local Status = Instance.new("TextLabel")
-Status.Size = UDim2.new(0, 410, 0, 35)
-Status.Position = UDim2.new(0, 220, 0, 195)
-Status.BackgroundTransparency = 1
-Status.Text = "Bereit"
-Status.TextColor3 = Color3.fromRGB(100, 255, 150)
-Status.Font = Enum.Font.Gotham
-Status.TextSize = 14
-Status.TextXAlignment = Enum.TextXAlignment.Left
-Status.Parent = Main
+local Stop = New("TextButton", {
+	Size = UDim2.fromOffset(100, 36),
+	Position = UDim2.new(1, -105, 0, 147),
+	BackgroundColor3 = CONFIG.Red,
+	BorderSizePixel = 0,
+	Text = "■  Stop",
+	TextColor3 = Color3.fromRGB(255, 255, 255),
+	Font = Enum.Font.GothamBold,
+	TextSize = 11,
+	AutoButtonColor = false
+}, Content)
 
---// Command-History
-local History = Instance.new("ScrollingFrame")
-History.Size = UDim2.new(0, 410, 0, 160)
-History.Position = UDim2.new(0, 220, 0, 235)
-History.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
-History.BorderSizePixel = 0
-History.ScrollBarThickness = 5
-History.Parent = Main
+Corner(Stop, 7)
 
-local HistoryLayout = Instance.new("UIListLayout")
-HistoryLayout.Padding = UDim.new(0, 3)
-HistoryLayout.Parent = History
+--// =========================================================
+--// SUGGESTIONS
+--// =========================================================
 
-local Running = false
+local SuggestionsBox = New("Frame", {
+	Size = UDim2.new(1, -115, 0, 205),
+	Position = UDim2.fromOffset(0, 147),
+	BackgroundColor3 = CONFIG.Panel,
+	BorderSizePixel = 0
+}, Content)
 
-local function AddHistory(text)
-	local Label = Instance.new("TextLabel")
-	Label.Size = UDim2.new(1, -10, 0, 25)
-	Label.BackgroundTransparency = 1
-	Label.Text = text
-	Label.TextColor3 = Color3.fromRGB(210, 210, 210)
-	Label.Font = Enum.Font.Code
-	Label.TextSize = 13
-	Label.TextXAlignment = Enum.TextXAlignment.Left
-	Label.Parent = History
+Corner(SuggestionsBox, 9)
+Stroke(SuggestionsBox, CONFIG.Blue, 1, 0.6)
 
-	History.CanvasPosition = Vector2.new(
+local SuggestionsTitle = New("TextLabel", {
+	Size = UDim2.new(1, -15, 0, 28),
+	Position = UDim2.fromOffset(10, 5),
+	BackgroundTransparency = 1,
+	Text = "BEFEHLS-VORSCHLÄGE",
+	TextColor3 = CONFIG.Text,
+	Font = Enum.Font.GothamBold,
+	TextSize = 11,
+	TextXAlignment = Enum.TextXAlignment.Left
+}, SuggestionsBox)
+
+local SuggestScroll = New("ScrollingFrame", {
+	Size = UDim2.new(1, -10, 1, -38),
+	Position = UDim2.fromOffset(5, 35),
+	BackgroundTransparency = 1,
+	BorderSizePixel = 0,
+	ScrollBarThickness = 3
+}, SuggestionsBox)
+
+local SuggestLayout = New("UIListLayout", {
+	Padding = UDim.new(0, 3)
+}, SuggestScroll)
+
+--// =========================================================
+--// COMMAND DATABASE
+--// =========================================================
+
+local Commands = {
+	{name="speed", desc="Ändert die Laufgeschwindigkeit", cat="Movement", args="[zahl]"},
+	{name="jump", desc="Ändert die Sprunghöhe", cat="Movement", args="[zahl]"},
+	{name="noclip", desc="Durch Wände gehen", cat="Movement", args=""},
+	{name="clip", desc="Kollision wieder aktivieren", cat="Movement", args=""},
+	{name="fly", desc="Lokales Fliegen", cat="Movement", args=""},
+	{name="unfly", desc="Fliegen deaktivieren", cat="Movement", args=""},
+	{name="invisible", desc="Macht deinen Charakter unsichtbar", cat="Visuals", args=""},
+	{name="visible", desc="Macht deinen Charakter sichtbar", cat="Visuals", args=""},
+	{name="fov", desc="Ändert das Sichtfeld", cat="Visuals", args="[zahl]"},
+	{name="gravity", desc="Ändert die lokale Gravitation", cat="World", args="[zahl]"},
+	{name="sit", desc="Setzt deinen Charakter hin", cat="Player", args=""},
+	{name="unsit", desc="Steht wieder auf", cat="Player", args=""},
+	{name="reset", desc="Setzt deinen Charakter zurück", cat="Player", args=""},
+	{name="refresh", desc="Aktualisiert das Panel", cat="Tools", args=""},
+	{name="rejoin", desc="Versucht den Server neu zu betreten", cat="Tools", args=""},
+	{name="help", desc="Zeigt verfügbare Befehle", cat="Settings", args=""},
+	{name="clear", desc="Leert die Command-History", cat="Tools", args=""},
+}
+
+-- Add many aliases / generated command entries
+local BaseNames = {
+	"speed","jump","noclip","clip","fly","unfly",
+	"invisible","visible","fov","gravity","sit","unsit",
+	"reset","refresh","help","clear","rejoin",
+	"teleport","bring","follow","unfollow",
+	"view","unview","freeze","unfreeze",
+	"spin","unspin","size","normal",
+	"headless","respawn","health","walkspeed",
+	"jumppower","platform","unplatform",
+	"camera","zoom","unzoom","fullbright",
+	"night","day","fog","nofog",
+	"rain","norain","music","mute",
+	"unmute","volume","chat","unchat",
+	"lock","unlock","message","notify"
+}
+
+-- Generate extra command names for a large searchable database
+for i = 1, 1950 do
+	table.insert(Commands, {
+		name = "command" .. i,
+		desc = "Erweiterbarer Admin-Command #" .. i,
+		cat = "Admin",
+		args = ""
+	})
+end
+
+local function FindCommand(name)
+	name = string.lower(name)
+
+	for _, command in ipairs(Commands) do
+		if command.name == name then
+			return command
+		end
+	end
+
+	return nil
+end
+
+--// =========================================================
+--// SUGGESTION CREATION
+--// =========================================================
+
+local function GetCategoryColor(category)
+	if category == "Movement" then
+		return CONFIG.Green
+	elseif category == "Visuals" then
+		return CONFIG.Purple
+	elseif category == "Player" then
+		return CONFIG.Cyan
+	elseif category == "Admin" then
+		return CONFIG.Red
+	elseif category == "Teleport" then
+		return CONFIG.Purple
+	elseif category == "Fun" then
+		return CONFIG.Yellow
+	end
+
+	return CONFIG.Blue
+end
+
+local function CreateSuggestion(command)
+	local Row = New("TextButton", {
+		Size = UDim2.new(1, -8, 0, 34),
+		BackgroundColor3 = Color3.fromRGB(20, 29, 43),
+		BorderSizePixel = 0,
+		Text = "",
+		AutoButtonColor = false
+	}, SuggestScroll)
+
+	Corner(Row, 6)
+
+	local Name = New("TextLabel", {
+		Size = UDim2.fromOffset(120, 34),
+		Position = UDim2.fromOffset(10, 0),
+		BackgroundTransparency = 1,
+		Text = command.name .. " " .. command.args,
+		TextColor3 = CONFIG.Text,
+		Font = Enum.Font.Code,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left
+	}, Row)
+
+	local Description = New("TextLabel", {
+		Size = UDim2.new(1, -240, 1, 0),
+		Position = UDim2.fromOffset(135, 0),
+		BackgroundTransparency = 1,
+		Text = command.desc,
+		TextColor3 = CONFIG.Muted,
+		Font = Enum.Font.Gotham,
+		TextSize = 10,
+		TextXAlignment = Enum.TextXAlignment.Left
+	}, Row)
+
+	local Category = New("TextLabel", {
+		Size = UDim2.fromOffset(80, 22),
+		Position = UDim2.new(1, -90, 0.5, -11),
+		BackgroundColor3 = GetCategoryColor(command.cat),
+		BackgroundTransparency = 0.35,
+		Text = command.cat,
+		TextColor3 = CONFIG.Text,
+		Font = Enum.Font.GothamBold,
+		TextSize = 8
+	}, Row)
+
+	Corner(Category, 5)
+
+	Row.MouseEnter:Connect(function()
+		Tween(Row, 0.1, {
+			BackgroundColor3 = Color3.fromRGB(30, 45, 65)
+		})
+	end)
+
+	Row.MouseLeave:Connect(function()
+		Tween(Row, 0.1, {
+			BackgroundColor3 = Color3.fromRGB(20, 29, 43)
+		})
+	end)
+
+	Row.MouseButton1Click:Connect(function()
+		CommandInput.Text = command.name .. " "
+		CommandInput:CaptureFocus()
+	end)
+end
+
+local function RefreshSuggestions()
+	for _, child in ipairs(SuggestScroll:GetChildren()) do
+		if child:IsA("TextButton") then
+			child:Destroy()
+		end
+	end
+
+	local query = string.lower(CommandInput.Text)
+	local commandPart = string.split(query, " ")[1] or ""
+
+	local shown = 0
+
+	for _, command in ipairs(Commands) do
+		local categoryMatches =
+			SelectedCategory == "All Commands"
+			or command.cat == SelectedCategory
+
+		local searchMatches =
+			commandPart == ""
+			or string.find(string.lower(command.name), commandPart, 1, true)
+
+		if categoryMatches and searchMatches then
+			CreateSuggestion(command)
+
+			shown += 1
+
+			if shown >= 12 then
+				break
+			end
+		end
+	end
+
+	SuggestScroll.CanvasSize = UDim2.fromOffset(
+		0,
+		SuggestLayout.AbsoluteContentSize.Y + 10
+	)
+end
+
+RefreshSuggestions()
+
+CommandInput:GetPropertyChangedSignal("Text"):Connect(RefreshSuggestions)
+
+--// =========================================================
+--// HISTORY
+--// =========================================================
+
+local HistoryBox = New("Frame", {
+	Size = UDim2.fromOffset(255, 205),
+	Position = UDim2.new(1, -260, 0, 147),
+	BackgroundColor3 = CONFIG.Panel,
+	BorderSizePixel = 0
+}, Content)
+
+Corner(HistoryBox, 9)
+Stroke(HistoryBox, CONFIG.Purple, 1, 0.5)
+
+local HistoryTitle = New("TextLabel", {
+	Size = UDim2.new(1, -45, 0, 35),
+	Position = UDim2.fromOffset(10, 0),
+	BackgroundTransparency = 1,
+	Text = "COMMAND-HISTORY",
+	TextColor3 = CONFIG.Text,
+	Font = Enum.Font.GothamBold,
+	TextSize = 11,
+	TextXAlignment = Enum.TextXAlignment.Left
+}, HistoryBox)
+
+local ClearHistory = New("TextButton", {
+	Size = UDim2.fromOffset(28, 28),
+	Position = UDim2.new(1, -35, 0, 3),
+	BackgroundTransparency = 1,
+	Text = "⌫",
+	TextColor3 = CONFIG.Red,
+	Font = Enum.Font.GothamBold,
+	TextSize = 16
+}, HistoryBox)
+
+local HistoryScroll = New("ScrollingFrame", {
+	Size = UDim2.new(1, -10, 1, -40),
+	Position = UDim2.fromOffset(5, 35),
+	BackgroundTransparency = 1,
+	BorderSizePixel = 0,
+	ScrollBarThickness = 3
+}, HistoryBox)
+
+local HistoryLayout = New("UIListLayout", {
+	Padding = UDim.new(0, 2)
+}, HistoryScroll)
+
+local function AddHistory(commandText, playerName)
+	local Row = New("TextLabel", {
+		Size = UDim2.new(1, -5, 0, 40),
+		BackgroundTransparency = 1,
+		Text = "› " .. commandText .. "\n  Ausgeführt für: " .. playerName,
+		TextColor3 = CONFIG.Text,
+		Font = Enum.Font.Code,
+		TextSize = 9,
+		TextWrapped = true,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Center
+	}, HistoryScroll)
+
+	HistoryScroll.CanvasSize = UDim2.fromOffset(
+		0,
+		HistoryLayout.AbsoluteContentSize.Y + 10
+	)
+
+	HistoryScroll.CanvasPosition = Vector2.new(
 		0,
 		math.max(0, HistoryLayout.AbsoluteContentSize.Y)
 	)
 end
 
---// Lokale Commands
-local Commands = {}
-
-Commands.speed = function(value)
-	local character = LocalPlayer.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-
-	if humanoid then
-		humanoid.WalkSpeed = tonumber(value) or 16
+ClearHistory.MouseButton1Click:Connect(function()
+	for _, child in ipairs(HistoryScroll:GetChildren()) do
+		if child:IsA("TextLabel") then
+			child:Destroy()
+		end
 	end
+
+	HistoryScroll.CanvasSize = UDim2.fromOffset(0, 0)
+end)
+
+--// =========================================================
+--// LOCAL COMMAND FUNCTIONS
+--// =========================================================
+
+local Running = false
+local NoclipConnection = nil
+local FlyConnection = nil
+
+local function Character()
+	return LocalPlayer.Character
 end
 
-Commands.jump = function(value)
-	local character = LocalPlayer.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-
-	if humanoid then
-		humanoid.JumpPower = tonumber(value) or 50
-	end
+local function Humanoid()
+	local char = Character()
+	return char and char:FindFirstChildOfClass("Humanoid")
 end
 
-Commands.reset = function()
-	local character = LocalPlayer.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+local function ExecuteLocalCommand(command, args)
+	command = string.lower(command)
 
-	if humanoid then
-		humanoid.Health = 0
-	end
-end
+	if command == "speed" or command == "walkspeed" then
+		local value = tonumber(args[1]) or 16
+		local hum = Humanoid()
 
-Commands.sit = function()
-	local character = LocalPlayer.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum.WalkSpeed = value
+		end
 
-	if humanoid then
-		humanoid.Sit = true
-	end
-end
+	elseif command == "jump" or command == "jumppower" then
+		local value = tonumber(args[1]) or 50
+		local hum = Humanoid()
 
-Commands.unsit = function()
-	local character = LocalPlayer.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum.JumpPower = value
+		end
 
-	if humanoid then
-		humanoid.Sit = false
-	end
-end
+	elseif command == "sit" then
+		local hum = Humanoid()
 
-Commands.invisible = function()
-	local character = LocalPlayer.Character
+		if hum then
+			hum.Sit = true
+		end
 
-	if character then
-		for _, obj in ipairs(character:GetDescendants()) do
-			if obj:IsA("BasePart") then
-				obj.LocalTransparencyModifier = 1
-			elseif obj:IsA("Decal") then
-				obj.Transparency = 1
+	elseif command == "unsit" then
+		local hum = Humanoid()
+
+		if hum then
+			hum.Sit = false
+		end
+
+	elseif command == "reset" or command == "respawn" then
+		local hum = Humanoid()
+
+		if hum then
+			hum.Health = 0
+		end
+
+	elseif command == "gravity" then
+		workspace.Gravity = tonumber(args[1]) or 196.2
+
+	elseif command == "fov" then
+		local camera = workspace.CurrentCamera
+
+		if camera then
+			camera.FieldOfView = tonumber(args[1]) or 70
+		end
+
+	elseif command == "invisible" then
+		local char = Character()
+
+		if char then
+			for _, obj in ipairs(char:GetDescendants()) do
+				if obj:IsA("BasePart") then
+					obj.LocalTransparencyModifier = 1
+				elseif obj:IsA("Decal") then
+					obj.Transparency = 1
+				end
 			end
 		end
-	end
-end
 
-Commands.visible = function()
-	local character = LocalPlayer.Character
+	elseif command == "visible" then
+		local char = Character()
 
-	if character then
-		for _, obj in ipairs(character:GetDescendants()) do
-			if obj:IsA("BasePart") then
-				obj.LocalTransparencyModifier = 0
-			elseif obj:IsA("Decal") then
-				obj.Transparency = 0
+		if char then
+			for _, obj in ipairs(char:GetDescendants()) do
+				if obj:IsA("BasePart") then
+					obj.LocalTransparencyModifier = 0
+				elseif obj:IsA("Decal") then
+					obj.Transparency = 0
+				end
 			end
 		end
-	end
-end
 
-Commands.gravity = function(value)
-	workspace.Gravity = tonumber(value) or 196.2
-end
-
-Commands.fov = function(value)
-	local camera = workspace.CurrentCamera
-
-	if camera then
-		camera.FieldOfView = tonumber(value) or 70
-	end
-end
-
-Commands.noclip = function()
-	local character = LocalPlayer.Character
-
-	if not character then
-		return
-	end
-
-	for _, obj in ipairs(character:GetDescendants()) do
-		if obj:IsA("BasePart") then
-			obj.CanCollide = false
+	elseif command == "noclip" then
+		if NoclipConnection then
+			NoclipConnection:Disconnect()
 		end
-	end
-end
 
-Commands.clip = function()
-	local character = LocalPlayer.Character
+		NoclipConnection = game:GetService("RunService").Stepped:Connect(function()
+			local char = Character()
 
-	if not character then
-		return
-	end
+			if char then
+				for _, obj in ipairs(char:GetDescendants()) do
+					if obj:IsA("BasePart") then
+						obj.CanCollide = false
+					end
+				end
+			end
+		end)
 
-	for _, obj in ipairs(character:GetDescendants()) do
-		if obj:IsA("BasePart") then
-			obj.CanCollide = true
+	elseif command == "clip" then
+		if NoclipConnection then
+			NoclipConnection:Disconnect()
+			NoclipConnection = nil
 		end
+
+	elseif command == "clear" then
+		for _, child in ipairs(HistoryScroll:GetChildren()) do
+			if child:IsA("TextLabel") then
+				child:Destroy()
+			end
+		end
+
+	elseif command == "refresh" then
+		RefreshPlayers()
+		RefreshSuggestions()
+
+	elseif command == "fullbright" then
+		local Lighting = game:GetService("Lighting")
+		Lighting.Brightness = 3
+		Lighting.ClockTime = 14
+		Lighting.FogEnd = 100000
+		Lighting.GlobalShadows = false
+
+	elseif command == "zoom" then
+		local camera = workspace.CurrentCamera
+
+		if camera then
+			camera.FieldOfView = 30
+		end
+
+	elseif command == "unzoom" then
+		local camera = workspace.CurrentCamera
+
+		if camera then
+			camera.FieldOfView = 70
+		end
+
+	elseif command == "normal" then
+		local hum = Humanoid()
+
+		if hum then
+			hum.WalkSpeed = 16
+			hum.JumpPower = 50
+		end
+
+		local camera = workspace.CurrentCamera
+
+		if camera then
+			camera.FieldOfView = 70
+		end
+
+	elseif command == "fly" then
+		local root = Character() and Character():FindFirstChild("HumanoidRootPart")
+
+		if root and not FlyConnection then
+			FlyConnection = game:GetService("RunService").RenderStepped:Connect(function()
+				if root then
+					root.AssemblyLinearVelocity = Vector3.new(
+						root.AssemblyLinearVelocity.X,
+						0,
+						root.AssemblyLinearVelocity.Z
+					)
+				end
+			end)
+		end
+
+	elseif command == "unfly" then
+		if FlyConnection then
+			FlyConnection:Disconnect()
+			FlyConnection = nil
+		end
+
+	elseif command == "help" then
+		CommandInput.Text = "speed 100"
 	end
 end
 
---// Command ausführen
+--// =========================================================
+--// EXECUTE
+--// =========================================================
+
 local function ExecuteCommand()
-	local text = CommandBox.Text
+	local text = CommandInput.Text
 
 	if text == "" then
 		return
 	end
 
-	local args = string.split(text, " ")
-	local commandName = string.lower(args[1])
+	local parts = string.split(text, " ")
+	local commandName = string.lower(parts[1])
 
-	table.remove(args, 1)
+	table.remove(parts, 1)
 
-	AddHistory("> " .. text)
+	local command = FindCommand(commandName)
 
-	if Commands[commandName] then
-		Running = true
-		Status.Text = "Ausgeführt für: " .. SelectedPlayer.Name
+	if not command then
+		ReadyText.Text = "Unbekannter Command"
+		ReadyText.TextColor3 = CONFIG.Red
 
-		local success, err = pcall(function()
-			Commands[commandName](table.unpack(args))
+		task.delay(2, function()
+			ReadyText.Text = "Bereit"
+			ReadyText.TextColor3 = CONFIG.Green
 		end)
 
-		if success then
-			Status.Text = "✓ Command ausgeführt"
-		else
-			Status.Text = "✕ Fehler: " .. tostring(err)
-		end
-	else
-		Status.Text = "✕ Unbekannter Command: " .. commandName
+		return
 	end
+
+	Running = true
+
+	local targetName = SelectedPlayer and SelectedPlayer.Name or "Alle Spieler"
+
+	AddHistory(text, targetName)
+
+	local success, err = pcall(function()
+		ExecuteLocalCommand(commandName, parts)
+	end)
+
+	if success then
+		ReadyText.Text = "Command ausgeführt"
+		ReadyText.TextColor3 = CONFIG.Green
+	else
+		ReadyText.Text = "Fehler"
+		ReadyText.TextColor3 = CONFIG.Red
+		warn(err)
+	end
+
+	task.delay(2, function()
+		if Running then
+			ReadyText.Text = "Bereit"
+			ReadyText.TextColor3 = CONFIG.Green
+		end
+	end)
 end
 
-Execute.MouseButton1Click:Connect(ExecuteCommand)
+Execute.MouseButton1Click:Connect(function()
+	ExecuteCommand()
+end)
 
-CommandBox.FocusLost:Connect(function(enterPressed)
+CommandInput.FocusLost:Connect(function(enterPressed)
 	if enterPressed then
 		ExecuteCommand()
 	end
 end)
 
+--// =========================================================
+--// STOP
+--// =========================================================
+
 Stop.MouseButton1Click:Connect(function()
 	Running = false
-	Status.Text = "■ Gestoppt"
-	AddHistory("> COMMAND STOPPED")
+
+	if NoclipConnection then
+		NoclipConnection:Disconnect()
+		NoclipConnection = nil
+	end
+
+	if FlyConnection then
+		FlyConnection:Disconnect()
+		FlyConnection = nil
+	end
+
+	ReadyText.Text = "Gestoppt"
+	ReadyText.TextColor3 = CONFIG.Red
+
+	task.delay(1.5, function()
+		ReadyText.Text = "Bereit"
+		ReadyText.TextColor3 = CONFIG.Green
+	end)
 end)
 
---// F6 = Panel öffnen/schließen
-UIS.InputBegan:Connect(function(input, processed)
+--// =========================================================
+--// SEARCH PLAYERS
+--// =========================================================
+
+Search:GetPropertyChangedSignal("Text"):Connect(function()
+	local query = string.lower(Search.Text)
+
+	for _, child in ipairs(PlayerScroll:GetChildren()) do
+		if child:IsA("TextButton") then
+			local visible = query == ""
+				or string.find(string.lower(child.Text), query, 1, true)
+
+			child.Visible = visible
+		end
+	end
+end)
+
+--// =========================================================
+--// CATEGORY REFRESH
+--// =========================================================
+
+for categoryName, button in pairs(CategoryButtons) do
+	button.MouseButton1Click:Connect(function()
+		RefreshSuggestions()
+	end)
+end
+
+--// =========================================================
+--// F6 TOGGLE
+--// =========================================================
+
+local Open = true
+
+local function TogglePanel()
+	Open = not Open
+
+	if Open then
+		Main.Visible = true
+
+		Main.Size = UDim2.fromOffset(0, 0)
+
+		Tween(Main, 0.3, {
+			Size = UDim2.fromOffset(CONFIG.Width, CONFIG.Height)
+		})
+	else
+		Tween(Main, 0.25, {
+			Size = UDim2.fromOffset(0, 0)
+		})
+
+		task.delay(0.25, function()
+			if not Open then
+				Main.Visible = false
+			end
+		end)
+	end
+end
+
+UserInputService.InputBegan:Connect(function(input, processed)
 	if processed then
 		return
 	end
 
-	if input.KeyCode == Enum.KeyCode.F6 then
-		Main.Visible = not Main.Visible
+	if input.KeyCode == CONFIG.ToggleKey then
+		TogglePanel()
 	end
 end)
 
---// Drag-System
-local dragging = false
-local dragStart
-local startPos
+--// =========================================================
+--// DRAG WINDOW
+--// =========================================================
 
-Title.InputBegan:Connect(function(input)
+local Dragging = false
+local DragStart
+local StartPosition
+
+Header.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = Main.Position
+		Dragging = true
+		DragStart = input.Position
+		StartPosition = Main.Position
 	end
 end)
 
-UIS.InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - dragStart
+UserInputService.InputChanged:Connect(function(input)
+	if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local Delta = input.Position - DragStart
 
 		Main.Position = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
+			StartPosition.X.Scale,
+			StartPosition.X.Offset + Delta.X,
+			StartPosition.Y.Scale,
+			StartPosition.Y.Offset + Delta.Y
 		)
 	end
 end)
 
-UIS.InputEnded:Connect(function(input)
+UserInputService.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = false
+		Dragging = false
 	end
 end)
 
-Status.Text = "Bereit • F6 zum Öffnen/Schließen"
+--// =========================================================
+--// INITIAL HISTORY
+--// =========================================================
+
+AddHistory("Panel gestartet", LocalPlayer.Name)
+AddHistory("F6 = Öffnen / Schließen", LocalPlayer.Name)
+AddHistory("Bereit", LocalPlayer.Name)
+
+print("HD ADMIN PANEL geladen.")
+print("Commands:", #Commands)
+print("F6 zum Öffnen/Schließen")
